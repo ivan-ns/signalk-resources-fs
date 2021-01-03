@@ -193,6 +193,7 @@ module.exports = (server: ServerAPI): ServerPlugin=> {
             setupDeltaPUT();
             // ** initialise HTTP routes **
             initRoutes();
+	    loadResourcesIntoServer();
         } 
         catch (e) {
             let msg:string= `Started with errors!`;       
@@ -217,7 +218,30 @@ module.exports = (server: ServerAPI): ServerPlugin=> {
         if(typeof server.setPluginStatus === 'function') { server.setPluginStatus(msg) }
         else { server.setProviderStatus(msg) }	
     }
+ // ** load date from DB into Signalk Server
+    const loadResourcesIntoServer = () => {
+       let r= db.getResources('routes', null, '');
+       r.then(result=> {
+        server.debug('!!!!!!!!!! SUCCESS !!!!!!!!!!!!!!!!!');
+        server.debug('! ALL RESPONSE !');
+        server.debug(result);
+        server.debug('! FOR IN !');
+        for(let curRes in result) {
+                server.debug(result[curRes]);
+                let r = {};
+                r.type = 'routes';
+                r.id = curRes;
+                r.value = result[curRes];
+                sendDelta(r);
+        }
+        server.debug('!!!!!!!!!! FINISH !!!!!!!!!!!!!!!!!');
 
+        }).catch( error=>{
+        server.debug('!!!!!!!!!! FAIL !!!!!!!!!!!!');
+        server.debug(error);
+        });
+    };
+	
     // ** Signal K Resources HTTP path handlers **
     const initRoutes= ()=> {
         let router: any = server;
